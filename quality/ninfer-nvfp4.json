@@ -1,0 +1,163 @@
+{
+  "label": "ninfer-nvfp4",
+  "model": "qwen3.8-27b",
+  "results": [
+    {
+      "id": "lru",
+      "cat": "code-gen",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 1024,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1024
+        },
+        "prompt_tokens": 126,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 1150
+      },
+      "engine_timings": {
+        "cache_n": 0,
+        "draft_n": 1048,
+        "draft_n_accepted": 673,
+        "predicted_ms": 6365.144442,
+        "predicted_n": 1024,
+        "predicted_per_second": 160.71905505392772,
+        "predicted_per_token_ms": 6.22203757771261,
+        "prompt_ms": 138.299225,
+        "prompt_n": 126,
+        "prompt_per_second": 911.0680121309429,
+        "prompt_per_token_ms": 1.0976128968253969
+      },
+      "total_s": 6.560934299603105,
+      "ttft_s": 0.16541859973222017,
+      "content": "",
+      "reasoning": "We need answer user in Chinese? User asks: \"ä½ æ¯ä¸ä¸ªèµæ·± Python å·¥ç¨å¸ãè¯·å®ç°ä¸ä¸ª LRU ç¼å­ç±»ï¼è¦æ±ï¼\n1. æ¯æ get(key) / put(key, value) / peek(key) ä¸ä¸ªæ¹æ³\n2. . æ¶é´å¤æåº¦ O(1)\n4. ç¨ç±»åæ³¨è§£ï¼åå®æ´ç docstring\nè¯·ç´æ¥è¾åºä»£ç ï¼ä¸è¦è§£éã\"\n\nNeed output code only, no explanation. Need implement LRU cache thread-safe O(1), type annotations, complete docstring. Need likely use OrderedDict? But O(1) and thread-safe. Could use collections.OrderedDict with lock. get/put/peek. Need decide semantics: get returns value and moves to most recently used; put inserts/updates and moves to MRU; peek returns value without changing order? Usually peek returns value without affecting LRU order. Need type annotations. Could generic? Python 3.9+? Use typing.Generic, TypeVar. Need complete docstring. Thread-safe: use threading.RLock or Lock. O(1): OrderedDict move_to_end O(1). But if using OrderedDict, get with default? Need avoid double lookup? OrderedDict.__getitem__ O(1). For get: with lock: if key not in self._data: return None? But value can be None. Need sentinel for missing. Could return None if not found. But if value None, get returns None ambiguous. Could use sentinel? User didn't specify. Better use _MISSING sentinel and return None? But type? Could return Optional[T]. If value can be None, returning None for missing is common. But to be precise, maybe use sentinel internal and return None. But if stored value None, get returns None too. That's okay if API returns Optional. Could also raise KeyError? LRU cache get often returns None. Need choose.\n\nNeed complete docstring. Could include class docstring and method docstrings. Direct code only.\n\nPotential implementation:\n\nfrom __future__ import annotations\nimport threading\nfrom collections import OrderedDict\nfrom typing import Generic, Optional, TypeVar\n\nK = TypeVar(\"K\")\nV = TypeVar(\"V\")\n_MISSING = object()\n\nclass LRUCache(Generic[K, V]):\n    \"\"\"Thread-safe LRU cache with O(1) get/put/peek.\n\n    ...\n    \"\"\"\n    def __init__(self, capacity: int) -> None:\n        if capacity <= 0: raise ValueError\n        self._capacity = capacity\n        self._data: OrderedDict[K, V] = OrderedDict()\n        self._lock = threading.RLock()\n\n    def get(self, key: K) -> Optional[V]:\n        \"\"\"Return value for key and mark as most recently used. Return None if absent.\"\"\"\n        with self._lock:\n            if key not in self._data:\n                return None\n            value = self._data[key]\n            self._data.move_to_end(key)\n            return value\n\n    def put(self, key: K, value: V) -> None:\n        \"\"\"Insert/update key with value, mark MRU, evict LRU if over capacity.\"\"\"\n        with self._lock:\n            if key in self._data:\n                self._data[key] = value\n                self._data.move_to_end(key)\n            else:\n                self._data[key] = value\n                if len(self._data) > self._capacity:\n                    self._data.popitem(last=False)\n\n    def peek(self, key: K) -> Optional[V]:\n        \"\"\"Return value without changing recency. Return None if absent.\"\"\"\n        with self._lock:\n            return self._data.get(key, None)\n\nBut if V can be None, peek returns None ambiguous. Could use sentinel and return None. Fine.\n\nNeed maybe include __len__, __contains__? Not required. But complete docstring maybe enough.\n\nPotential issue: Generic with OrderedDict[K,V] requires Python 3.9? collections.OrderedDict supports generic since 3.9? Actually collections.abc? In Python 3.9, collections.OrderedDict is generic? I think yes? PEP 585: collections.OrderedDict can be subscripted? Yes in 3.9. But to be safe use typing.OrderedDict? There is typing.OrderedDict? Yes typing.OrderedDict exists? I think typing has OrderedDict? Let's check: typing module includes OrderedDict? I think yes? Actually typing.OrderedDict is a generic alias? In Python 3.7.2? It exists. But simpler: from typing import Generic, Optional, TypeVar; from collections import OrderedDict. Use self._data: \"OrderedDict[K, V]\"? If runtime subscripting not supported in older Python, but with from __future__ import annotations, annotations are strings, okay. But variable annotation inside",
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "bugfix",
+      "cat": "bugfix",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 637,
+        "completion_tokens_details": {
+          "reasoning_tokens": 451
+        },
+        "prompt_tokens": 142,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 779
+      },
+      "engine_timings": {
+        "cache_n": 0,
+        "draft_n": 690,
+        "draft_n_accepted": 408,
+        "predicted_ms": 4138.44192,
+        "predicted_n": 637,
+        "predicted_per_second": 153.68102592581508,
+        "predicted_per_token_ms": 6.5069841509433965,
+        "prompt_ms": 92.388147,
+        "prompt_n": 142,
+        "prompt_per_second": 1536.993701150863,
+        "prompt_per_token_ms": 0.6506207535211268
+      },
+      "total_s": 4.275218399707228,
+      "ttft_s": 0.09926119958981872,
+      "content": "æ ¹å ï¼`incr()` ä¸­ç `cur = self.n`ã`cur += 1`ã`self.n = cur` æ¯ä¸ä¸ªâè¯»åâæä½ï¼æ´ä½ä¸æ¯åå­çãå¤çº¿ç¨ä¸å¯è½äº¤éæ§è¡ï¼\n\n- çº¿ç¨ A è¯»å `self.n = 0`\n- çº¿ç¨ B è¯»å `self.n = 0`\n- çº¿ç¨ A åå `1`\n- çº¿ç¨ B åå `1`\n\næç»ç»ææ¯ `1`ï¼èä¸æ¯é¢æç `2`ï¼åçä¸¢å¤±æ´æ°ã\n\næå°ä¿®å¤ï¼å éä¿æ¤èªå¢è¿ç¨ã\n\n```python\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self.n = 0\n        self._lock = threading.Lock()\n\n    def incr(self):\n        with self._lock:\n            self.n += 1\n```",
+      "reasoning": "We need answer in Chinese. User asks: Python code has concurrency defect, point root cause and minimal fix, provide full fixed code. Requirement: support multithread safe increment, explain why original unsafe.\n\nNeed think. Original Counter.incr: cur = self.n; cur += 1; self.n = cur. In CPython, due to GIL, individual bytecode operations atomic? But sequence not atomic. Race condition: two threads read same self.n before either writes, lost update. Also self.n = cur not atomic? assignment is atomic but read-modify-write not. Need minimal change: use threading.Lock around read-modify-write. Could also use itertools.count? But minimal: add lock in __init__, with self._lock in incr. Full code:\nimport threading\nclass Counter:\n    def __init__(self):\n        self.n = 0\n        self._lock = threading.Lock()\n    def incr(self):\n        with self._lock:\n            self.n += 1\nMaybe return? Original no return. Keep minimal. Could also use lock around cur. Need explain root cause: non-atomic read-modify-write, interleaving: T1 reads n=0, T2 reads n=0, both write 1, final 1 instead of 2. GIL doesn't make multi-step method atomic; thread can switch between bytecodes. Minimal fix: mutual exclusion lock.\n\nNeed maybe mention if want thread-safe and minimal, use lock. Could also use threading.Lock and self.n += 1 inside with. In Python, self.n += 1 compiles to load, add, store; not atomic. Lock ensures only one thread executes critical section.\n\nNeed final with code block. Ensure complete code. Maybe include optional test? User asks full code. Could include only class. Need maybe mention if using CPython, self.n = cur assignment atomic but not enough. Also if using PyPy? GIL not relevant. But root cause is race condition.\n\nNeed be careful: \"æå°æ¹å¨\" maybe add lock. Could also use `threading.Lock` and `with`. That's minimal.\n\nNeed final in Chinese. Include explanation.\n",
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "toolcall",
+      "cat": "tool-use",
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 96,
+        "completion_tokens_details": {
+          "reasoning_tokens": 43
+        },
+        "prompt_tokens": 334,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 430
+      },
+      "engine_timings": {
+        "cache_n": 0,
+        "draft_n": 87,
+        "draft_n_accepted": 69,
+        "predicted_ms": 522.852294,
+        "predicted_n": 96,
+        "predicted_per_second": 181.69567407501896,
+        "predicted_per_token_ms": 5.5037083578947374,
+        "prompt_ms": 119.06913700000001,
+        "prompt_n": 334,
+        "prompt_per_second": 2805.0929772002964,
+        "prompt_per_token_ms": 0.35649442215568866
+      },
+      "total_s": 0.6522821998223662,
+      "ttft_s": 0.12632489996030927,
+      "content": "",
+      "reasoning": "ç¨æ·è¦æ±æ¥è¯¢åäº¬åä¸æµ·ç°å¨çå¤©æ°ï¼éè¦è°ç¨ get_weather åå¸çå¤©æ°æ¥è¯¢æ¯ç¸äºç¬ç«çï¼æ²¡æå¯ä»¥å¨åä¸ä¸ªåä¸­å¹¶è¡è°ç¨ä¸¤æ¬¡ get\n",
+      "tool_calls": [
+        {
+          "id": "call_a98fffde55c46f03",
+          "type": "function",
+          "function": {
+            "name": "get_weather",
+            "arguments": "{\"city\":\"åäº¬\"}"
+          }
+        },
+        {
+          "id": "call_69e76ebcbad57ee9",
+          "type": "function",
+          "function": {
+            "name": "get_weather",
+            "arguments": "{\"city\":\"ä¸æµ·\"}"
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "design",
+      "cat": "complex",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 1536,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1536
+        },
+        "prompt_tokens": 123,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 1659
+      },
+      "engine_timings": {
+        "cache_n": 0,
+        "draft_n": 1718,
+        "draft_n_accepted": 961,
+        "predicted_ms": 10512.114886000001,
+        "predicted_n": 1536,
+        "predicted_per_second": 146.02199620594973,
+        "predicted_per_token_ms": 6.84828331335505,
+        "prompt_ms": 92.155002,
+        "prompt_n": 123,
+        "prompt_per_second": 1334.7078002342184,
+        "prompt_per_token_ms": 0.7492276585365854
+      },
+      "total_s": 10.603830200154334,
+      "ttft_s": 0.10251200012862682,
+      "content": "",
+      "reasoning": "We need answer in Chinese likely. User asks: è®¾è®¡å¹¶å®ç°ä¸ä¸ªéæµå¨ï¼token bucket rate limiterï¼ï¼è¦æ±ï¼\n1. æ¯æéç\n2. try_acquire(n) éé»å¡ï¼æåè¿å True\n3. æ¯ææ key ç»´åº¦éç¦»ï¼å¤ç§æ·ï¼\n4.è¯·ç»åºå®æ´å¯è¿è¡ä»£ç ã\n\nNeed provide complete runnable code. Need think about design. Python likely. Need thread-safe. Could implement TokenBucket class and MultiTenantRateLimiter. Use threading.Lock per bucket or global lock? For multi-tenant, per-key lock better. Need handle time, capacity, refill rate. try_acquire(n) non-blocking. Need unit tests. Complete runnable code maybe single file with tests using unittest. Need ensure thread safety. Need maybe use time.monotonic. Need support capacity and refill rate. Could have default global limiter? Requirements: support setting capacity and refill rate; try_acquire(n); key isolation; unit tests.\n\nNeed produce code. Let's design robust.\n\nClass TokenBucket:\n- __init__(capacity: float, refill_rate: float, now_func=time.monotonic)\n- capacity >=0, refill_rate >=0. If capacity 0? If n=0? Usually allow n=0 True. If capacity <0 error. If refill_rate <0 error.\n- _tokens = capacity\n- _last_refill = now_func()\n- _lock = threading.Lock()\n- _refill(): now = now_func(); elapsed = now - last; if elapsed >0: tokens = min(capacity, tokens + elapsed*rate); last=now.\n- try_acquire(n=1): if n <0 error? if n==0 return True. with lock: _refill(); if tokens >= n: tokens -= n; return True else False.\nPotential floating precision. Use float.\n\nMultiTenantRateLimiter:\n- __init__(capacity, refill_rate, now_func=time.monotonic)\n- _buckets = {}\n- _lock = threading.Lock() to protect dict creation.\n- _get_bucket(key): with _lock: bucket = self._buckets.get(key); if None: bucket=TokenBucket(...); self._buckets[key]=bucket; return bucket.\n- try_acquire(key, n=1): bucket = self._get_bucket(key); return bucket.try_acquire(n)\nCould also allow per-key capacity/rate? Requirement support setting capacity and refill rate maybe global. Could add optional per-key overrides? But keep simple. Maybe class accepts capacity and refill_rate. Could also have get_bucket.\n\nNeed unit tests:\n- test_initial_tokens: capacity 10 rate 1, try_acquire(10) True, try_acquire(1) False.\n- test_refill: capacity 10 rate 100, consume 10, sleep 0.05, expect 5 tokens? Use fake clock for deterministic. Better implement tests with fake now function. Since TokenBucket accepts now_func. MultiTenantRateLimiter accepts now_func. Use FakeClock class with time and advance. Then deterministic.\n- test_capacity_cap: capacity 10 rate 100, advance 100, tokens capped at 10.\n- test_multi_tenant_isolation: limiter capacity 5 rate 0. key A consume 5, key B can consume 5.\n- test_thread_safety: capacity 1000 rate 0, many threads try_acquire(1) exactly 1000 true. Use barrier. Or with rate 0. Need ensure no race. Use 10 threads * 100 attempts. Count successes. Should equal capacity.\n- test_try_acquire_zero returns True even empty.\n- test_negative raises ValueError.\n- test invalid params raises.\n- test per key separate with fake clock.\n- test non-blocking: no sleep.\n- test fractional tokens? capacity 1 rate 1, after 0.5 can acquire 0? n integer? n can be float? Usually n int. Could allow numeric. But tests integer.\n\nNeed complete runnable code. Could include if __name__ == '__main__': unittest.main(). Need maybe type hints.\n\nNeed consider thread safety of MultiTenantRateLimiter: dict lock and bucket lock. Potential deadlock? _get_bucket acquires global lock then releases; bucket.try_acquire acquires bucket lock. No nested locks. Good.\n\nPotential issue with fake clock and threading tests: use real time.monotonic for thread test. If rate 0, no refill. Good.\n\nNeed maybe include context manager? Not necessary.\n\nNeed maybe support dynamic capacity/rate? Not required. Could add set_capacity? Not required.\n\nNeed maybe implement with `threading.Lock` and `time.monotonic`.\n\nNeed ensure code is complete and runnable. Provide explanation maybe concise. User asks design and implement. Final should include code and maybe usage. Desired oververbosity 9, so detailed. But not too long. Need maybe include full code in one block.\n\nLet's think edge cases:\n- `refill_rate` tokens per second. If rate=0, no refill.\n- `capacity` can be float. `tokens` float.\n- `try_acquire(n)` if n > capacity? Should return False after refill (unless capacity >= n). If n negative raise ValueError. If n is not int? Could accept float. But if n=0.5? Token bucket can support fractional. But typical n int. We can allow `n: float` and validate `n >= 0`. But if user expects int, okay.\n- If `capacity` is 0 and n=0 True, n>0 False.\n- If `now_func` returns non-monotonic? We assume.\n- If elapsed negative due to clock? Use max(0.0, now - last). Good.\n- Use `math.isfinite`? Could validate. Maybe not necessary but robust.\n\nPotential unit test with fake clock:\n```\nclass FakeClock:\n    def __init__(self, start=0.0): self._now = start\n    def __call__(self): return self._now\n    def advance(self, seconds): self._now += seconds\n```\nBut if used in thread test? no.\n\nTest:\n```\nclass TokenBucketTests(unittest.TestCase):\n    def test_initial_capacity(self):\n        clock = FakeClock()\n        bucket = TokenBucket(capacity=10, refill_rate=1, now_func=clock)\n        self.assertTrue(bucket.try_acquire(10))\n        self.assertFalse(bucket.try_acquire(1))\n```\nRefill:\n```\nclock = FakeClock()\nbucket = TokenBucket(10, 10, clock)\nbucket.try_acquire(10)\nclock.advance(0.5)\nself.assertTrue(bucket.try_acquire(5))\nself.assertFalse(bucket.try_acquire(1))\n```\nCap:\n```\nbucket = TokenBucket(10, 100, clock)\nbucket.try_acquire(10)\nclock.advance(10)\nself.assertTrue(bucket.try_acquire(10))\nself.assertFalse(bucket.try_acquire(1))\n```\nZero:\n```\nbucket.try_acquire",
+      "tool_calls": [],
+      "error": null
+    }
+  ]
+}

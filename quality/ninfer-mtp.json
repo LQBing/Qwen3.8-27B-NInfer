@@ -1,0 +1,163 @@
+{
+  "label": "ninfer-mtp",
+  "model": "qwen3.8-27b",
+  "results": [
+    {
+      "id": "lru",
+      "cat": "code-gen",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 1024,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1024
+        },
+        "prompt_tokens": 126,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 1150
+      },
+      "engine_timings": {
+        "cache_n": 0,
+        "draft_n": 1125,
+        "draft_n_accepted": 647,
+        "predicted_ms": 6461.127270000001,
+        "predicted_n": 1024,
+        "predicted_per_second": 158.3315042794382,
+        "predicted_per_token_ms": 6.315862434017596,
+        "prompt_ms": 116.799393,
+        "prompt_n": 126,
+        "prompt_per_second": 1078.7727295808807,
+        "prompt_per_token_ms": 0.9269793095238095
+      },
+      "total_s": 6.57985629979521,
+      "ttft_s": 0.13320769974961877,
+      "content": "",
+      "reasoning": "We need answer user's request in Chinese? User asks: \"ä½ æ¯ä¸ä¸ªèµæ·± Python å·¥ç¨å¸ãè¯·å®ç°ä¸ä¸ª LRU ç¼å­ç±»ï¼è¦æ±ï¼\n1. æ¯æ get(key) / put(key, value) / peek(key) ä¸ä¸ªæ¹æ³\n2. . æ¶é´å¤æåº¦ O(1)\n4. ç¨ç±»åæ³¨è§£ï¼åå®æ´ç docstring\nè¯·ç´æ¥è¾åºä»£ç ï¼ä¸è¦è§£éã\"\n\nNeed output code only, no explanation. Need implement LRU cache thread-safe O(1), type annotations, complete docstring. Need likely include from __future__? Could use threading.RLock or Lock. Need O(1) with OrderedDict? Python's OrderedDict move_to_end is O(1) average? It is O(1) amortized? But requirement O(1). Could implement doubly linked list + dict for strict O(1). Thread-safe with threading.Lock. Methods get, put, peek. peek should return value without changing order? Usually peek returns value without affecting LRU order. Need decide missing behavior: get returns None if missing? Could use sentinel? Since values can be None. Better get returns Optional[T] with default None? But if value None ambiguous. Could provide get(key, default=None). But requirement get(key). Could return None for missing. Type generic? Python 3.9+? Use Generic[K,V]? Need type annotations. Could define class LRUCache(Generic[K, V]): with K Hashable, V Any. But using Generic from typing. Need complete docstring.\n\nNeed direct code only. Ensure thread safe. Use __slots__? Need node class.\n\nPotential code:\nfrom __future__ import annotations\nimport threading\nfrom typing import Generic, Hashable, Optional, TypeVar, Any\n\nK = TypeVar(\"K\", bound=Hashable)\nV = TypeVar(\"V\")\n\nclass _Node(Generic[K, V]):\n    __slots__ = (\"key\", \"value\", \"prev\", \"next\")\n    def __init__(self, key: K, value: V) -> None: ...\n\nclass LRUCache(Generic[K, V]):\n    \"\"\"...\"\"\"\n    def __init__(self, capacity: int) -> None:\n        if capacity <= 0: raise ValueError\n        self._capacity = capacity\n        self._lock = threading.RLock()\n        self._map: dict[K, _Node[K,V]] = {}\n        self._head = _Node[K,V](None, None) # but K bound Hashable, None not hashable? None is hashable. But generic K bound Hashable, None is Hashable? Type checker may complain if K bound Hashable and None not K. Could use dummy with key=None? If K is generic, dummy key type K? Can't assign None. Could avoid dummy by using head/tail nodes with key/value Any? Or use separate _Node with key: Any? Simpler: use OrderedDict? But strict O(1) maybe okay. But type annotations with dummy tricky.\n\nCould implement without dummy: maintain head and tail Optional[_Node]. But O(1). Need careful.\n\nUse dummy nodes with key: Any, value: Any? Define _Node without generic? class _Node: __slots__ = (\"key\",\"value\",\"prev\",\"next\"); key: Any; value: Any. Then map dict[K, _Node]. Dummy = _Node(None, None). That's fine. Type annotations less precise but okay.\n\nMethods:\ndef get(self, key: K, default: V | None = None) -> V | None: but requirement get(key). Could include default optional. But if V can be None, return default. Use sentinel? To avoid ambiguity, could return Optional[V] and missing None. But if value None, same. Could use get(key, default=_MISSING) and raise? But requirement get(key). Simpler: get(self, key: K) -> Optional[V]: returns None if missing. But if stored None, can't distinguish. Could document. Or use get(key, default: V = None) -> V. But type V | None.\n\npeek(key) -> Optional[V] no order change.\n\nput(key, value): if key exists update value and move to end (most recent). If new and capacity full evict least recent (head.next). Use lock.\n\nNeed O(1). Use doubly linked list.\n\nImplementation details:\nclass _Node:\n    __slots__ = (\"key\", \"value\", \"prev\", \"next\")\n    def __init__(self, key: Any, value: Any) -> None:\n        self.key = key\n        self.value = value\n        self.prev: Optional[_Node] = None\n        self.next: Optional[_Node] = None\n\nclass LRUCache(Generic[K,V]):\n    def __init__(self, capacity: int)",
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "bugfix",
+      "cat": "bugfix",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 578,
+        "completion_tokens_details": {
+          "reasoning_tokens": 385
+        },
+        "prompt_tokens": 142,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 720
+      },
+      "engine_timings": {
+        "cache_n": 0,
+        "draft_n": 600,
+        "draft_n_accepted": 378,
+        "predicted_ms": 3464.580583,
+        "predicted_n": 578,
+        "predicted_per_second": 166.5425254737104,
+        "predicted_per_token_ms": 6.004472414211438,
+        "prompt_ms": 149.976305,
+        "prompt_n": 142,
+        "prompt_per_second": 946.8162320707928,
+        "prompt_per_token_ms": 1.056171161971831
+      },
+      "total_s": 3.5974353002384305,
+      "ttft_s": 0.15448250016197562,
+      "content": "æ ¹å ï¼`incr()` ä¸­çâè¯»å `self.n` -> å  1 -> åå `self.n`âä¸æ¯åå­æä½ãå¤ä¸ªçº¿ç¨å¯è½åæ¶è¯»å°åä¸ä¸ªæ§å¼ï¼ç¶åé½ååæ§å¼ + 1ï¼å¯¼è´é¨åèªå¢ä¸¢å¤±ã\n\nä¾å¦ï¼\n\n```text\nçº¿ç¨ A: cur = self.n   # è¯»å° 0\nçº¿ç¨ B: cur = self.n   # ä¹è¯»å° 0\nçº¿ç¨ A: self.n = 1\nçº¿ç¨ B: self.n = 1åªå¢å äº 1ï¼èä¸æ¯ 2\n```\n\næå°ä¿®å¤ï¼å éä¿æ¤è¯»æ¹åè¿ç¨ã\n\n```python\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self.n = 0\n        self._lock = threading.Lock()\n\n    def incr(self):\n        with self._lock:\n            self.n += 1\n```",
+      "reasoning": "We need answer in Chinese. User asks: Python code has concurrency defect, point root cause and minimal fix, give complete fixed code. Need support multithread safe increment, explain why original unsafe. Need think.\n\nCode:\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self.n = 0\n    def incr(self):\n        cur = self.n\n        cur += 1\n        self.n = cur\n\nRoot cause: read-modify-write not atomic. Multiple threads can read same self.n before any writes, causing lost updates. In CPython, due to GIL, individual bytecode operations may be atomic but sequence can be interrupted between bytecodes, so race. Minimal fix: use threading.Lock around read-modify-write. Or use itertools.count? But minimal: add lock in __init__, with self._lock: ...\n\nNeed provide complete code:\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self.n = 0\n        self._lock = threading.Lock()\n    def incr(self):\n        with self._lock:\n            self.n += 1\n\nCould also return? Original doesn't return. Keep minimal. If want thread-safe self increment. Could use lock. Explain: original: cur = self.n; cur += 1; self.n = cur. If thread A reads n=0, thread B reads n=0 before A writes, both write 1, one increment lost. Lock ensures critical section atomic.\n\nNeed maybe mention if only need integer increment, could use threading.Lock or RLock? Lock enough. Minimal change: add lock and wrap. Could also use `self.n += 1` under lock; but `+=` on int still read-modify-write but under lock safe. Need complete code.\n\nNeed final concise but detailed enough. Ensure Chinese.\n",
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "toolcall",
+      "cat": "tool-use",
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 82,
+        "completion_tokens_details": {
+          "reasoning_tokens": 29
+        },
+        "prompt_tokens": 334,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 416
+      },
+      "engine_timings": {
+        "cache_n": 0,
+        "draft_n": 66,
+        "draft_n_accepted": 62,
+        "predicted_ms": 380.89962199999997,
+        "predicted_n": 82,
+        "predicted_per_second": 212.6544509933906,
+        "predicted_per_token_ms": 4.702464469135802,
+        "prompt_ms": 198.972788,
+        "prompt_n": 334,
+        "prompt_per_second": 1678.621500745117,
+        "prompt_per_token_ms": 0.5957269101796407
+      },
+      "total_s": 0.5815940001048148,
+      "ttft_s": 0.20349609991535544,
+      "content": "",
+      "reasoning": "The user is asking to check the current weather in Beijing and Shanghai. Since these are independent calls, they can be made in parallel.\n",
+      "tool_calls": [
+        {
+          "id": "call_fea3cecdfdfad207",
+          "type": "function",
+          "function": {
+            "name": "get_weather",
+            "arguments": "{\"city\":\"åäº¬\"}"
+          }
+        },
+        {
+          "id": "call_43a34e5aa1a928af",
+          "type": "function",
+          "function": {
+            "name": "get_weather",
+            "arguments": "{\"city\":\"ä¸æµ·\"}"
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "design",
+      "cat": "complex",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 1536,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1536
+        },
+        "prompt_tokens": 123,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 1659
+      },
+      "engine_timings": {
+        "cache_n": 0,
+        "draft_n": 1741,
+        "draft_n_accepted": 954,
+        "predicted_ms": 10087.405461,
+        "predicted_n": 1536,
+        "predicted_per_second": 152.16995152367258,
+        "predicted_per_token_ms": 6.571599648859935,
+        "prompt_ms": 130.413474,
+        "prompt_n": 123,
+        "prompt_per_second": 943.1540793093204,
+        "prompt_per_token_ms": 1.0602721463414635
+      },
+      "total_s": 10.16554079996422,
+      "ttft_s": 0.13869199994951487,
+      "content": "",
+      "reasoning": "We need answer in Chinese likely. User asks: è®¾è®¡å¹¶ä»¤çæ¡¶éæµå¨ï¼token bucket rate limiterï¼ï¼è¦æ±ï¼\n1. æ¯æéç\n2. try_acquire(n) éé»å¡ï¼æåè¿å True\n3. æ¯ææ key ç»´åº¦éç¦»ï¼å¤ç§æ·ï¼\n4.è¯·ç»åºå®æ´å¯è¿è¡ä»£ç ã\n\nNeed provide complete runnable code. Need think about design. Python likely. Need thread-safe. Could implement TokenBucket and MultiTenantRateLimiter. Use threading.Lock per bucket or global lock? For multi-tenant, per-key lock to reduce contention. Need handle time monotonic. Capacity and refill rate. try_acquire(n) non-blocking. If n > capacity return False. Refill based on elapsed time: tokens = min(capacity, tokens + elapsed*rate). If tokens >= n: tokens -= n; True else False.\n\nNeed unit tests. Could include doctest? Provide code with tests using unittest. Need complete runnable: maybe single file rate_limiter.py with classes and if __name__ == '__main__': unittest.main(). Or include tests in same file. Need ensure thread safety. Need consider floating point precision. Use time.monotonic. Rate tokens per second. Capacity maybe int/float. If rate <=0? Could allow no refill. If capacity <=0? maybe raise ValueError. n positive? If n <=0 return True? Usually acquire zero tokens true. But if n negative? Could raise or treat as 0. Better: if n < 0 raise ValueError; if n == 0 return True. If n > capacity return False.\n\nThread-safe multi-tenant: class MultiTenantRateLimiter:\n- __init__(capacity, rate, max_keys=None?) Could have default capacity/rate for all keys, or allow per-key config? Requirement support setting capacity and refill rate; by key isolation. Could implement factory: limiter = MultiTenantRateLimiter(capacity=10, rate=5) and limiter.try_acquire(key, n). Or allow get_bucket(key, capacity=None, rate=None). Simpler: MultiTenantRateLimiter(capacity, rate) with try_acquire(key, n). Also maybe allow per-key overrides: get_bucket(key, capacity=None, rate=None). But requirement maybe enough.\n\nNeed avoid unbounded dict growth? Could mention optional cleanup. But complete code maybe include max_keys and LRU? Could complicate. Maybe include optional max_keys with OrderedDict and lock. But thread-safe and tests. Could keep simple: dict key->TokenBucket, global lock for dict, per-bucket lock for state. But if per-bucket lock and global lock, need avoid deadlock. Approach:\nclass TokenBucket:\n  def __init__(capacity, rate): self._capacity, self._rate, self._tokens=capacity, self._last_refill=monotonic(), self._lock=Lock()\n  def try_acquire(n): with lock: if n<0 raise; if n==0 return True; if n>capacity return False; now=monotonic(); elapsed=now-last; if rate>0: tokens=min(capacity, tokens+elapsed*rate); last=now; if tokens>=n: tokens-=n; return True else False.\n\nclass MultiTenantRateLimiter:\n  def __init__(capacity, rate): self._capacity=capacity; self._rate=rate; self._buckets={}; self._dict_lock=Lock()\n  def _get_bucket(key): with dict_lock: bucket=self._buckets.get(key); if None: bucket=TokenBucket(self._capacity,self._rate); self._buckets[key]=bucket; return bucket\n  def try_acquire(key,n): return self._get_bucket(key).try_acquire(n)\n\nPotential issue: if capacity/rate can be per key? Could add get_bucket(key, capacity=None, rate=None) and try_acquire(key,n,capacity=None,rate=None). But if default None use defaults. If per-key config provided, need store config to create bucket. Could implement:\nclass MultiTenantRateLimiter:\n  def __init__(self, default_capacity=None, default_rate=None): ...\n  def get_bucket(self, key, capacity=None, rate=None): cap = capacity if capacity is not None else default_capacity; rate = rate if rate is not None else default_rate; if cap is None or rate is None raise? Or if default None and no per-key raise. But requirement support setting capacity and refill rate. Could make constructor require capacity and rate. Simpler.\n\nBut maybe better: TokenBucket(capacity, rate). MultiTenantRateLimiter(default_capacity, default_rate). Also allow per-key: try_acquire(key, n, capacity=None, rate=None). If capacity/rate not None, use per-key. Need ensure if same key later with different config? Could treat as separate bucket? Better: key identifies tenant; config should be stable. If different config passed, maybe raise ValueError or create new? To avoid surprising, if bucket exists and config differs, raise ValueError. But tests may not need. Could implement _get_bucket(key, capacity=None, rate=None): effective cap/rate; with dict lock: existing = self._buckets.get(key); if existing: if capacity is not None and capacity != existing.capacity or rate is not None and rate != existing.rate: raise ValueError; return existing; else create. But if default None? Hmm.\n\nMaybe keep simple and robust: MultiTenantRateLimiter(capacity, rate) only. Unit tests: test initial capacity, try_acquire more than capacity false, refill over time, per-key isolation, thread safety. Need tests that don't sleep too long. Use small rates and sleep. For deterministic, can inject clock? For unit tests, maybe use time.monotonic but sleep. Could also make clock injectable for tests. Better design: TokenBucket accepts clock callable default time.monotonic. MultiTenantRateLimiter accepts clock. Then tests can use fake clock to avoid sleeps. But requirement complete runnable; can include FakeClock in tests. That is elegant. Need ensure thread-safe with fake clock? In tests single-thread. For thread test use real clock and threads.\n\nImplement:\nimport threading, time\nfrom typing import Callable, Optional\n\nclass TokenBucket:\n    def __init__(self, capacity: float, rate: float, clock: Callable[[], float] = time.monotonic):\n        if capacity < 0: raise ValueError\n        if rate < 0: raise ValueError\n        self._capacity = float(capacity)\n        self._rate = float(rate)\n        self._clock = clock\n        self._tokens = self._capacity\n        self._last_refill = self._clock()\n        self._lock = threading.Lock()\n\n    @property capacity, rate, tokens? tokens property needs lock and refill? Could expose available_tokens() that refills? But modifying under lock. For tests maybe.\n\n    def _refill_locked(self, now): if self._rate > 0: elapsed = max(0.0, now - self._last_refill); if elapsed > 0: self._tokens = min(self._capacity, self._tokens + elapsed * self._rate); self._last_refill = now\n\n    def try_acquire(self, n: float) -> bool:\n       if n < 0:",
+      "tool_calls": [],
+      "error": null
+    }
+  ]
+}

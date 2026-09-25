@@ -1,0 +1,99 @@
+{
+  "label": "sglang",
+  "model": "qwen3.8-27b-nvfp4",
+  "results": [
+    {
+      "id": "lru",
+      "cat": "code-gen",
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 84,
+        "total_tokens": 1108,
+        "completion_tokens": 1024,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 449
+      },
+      "engine_timings": null,
+      "total_s": 6.408913599792868,
+      "ttft_s": 0.13506919983774424,
+      "content": "\n\n```python\n\"\"\"Thread-safe O(1) LRU (Least Recently Used) cache implementation.\"\"\"\n\nfrom __future__ import annotations\n\nfrom collections import OrderedDict\nfrom threading import RLock\nfrom typing import Generic, Optional, TypeVar\n\nKT = TypeVar(\"KT\")\nVT = TypeVar(\"VT\")\n\n\nclass LRUCache(Generic[KT, VT]):\n    \"\"\"A thread-safe LRU cache with O(1) get/put/peek operations.\n\n    The cache maintains a fixed maximum size.  When the cache is full and a\n    new key is inserted, the least-recently-used entry is evicted.\n\n    Thread safety is guaranteed via a re-entrant lock (``threading.RLock``),\n    so the same thread may call nested methods without deadlocking.\n\n    Example:\n        >>> cache: LRUCache[str, int] = LRUCache(capacity=2)\n        >>> cache.put(\"a\", 1)\n        >>> cache.get(\"a\")\n        1\n        >>> cache.put(\"b\", 2)\n        >>> cache.put(\"c\", 3)   # evicts \"b\"\n        >>> cache.get(\"b\") is None\n        True\n        >>> cache.get(\"c\")\n        3\n    \"\"\"\n\n    def __init__(self, capacity: int) -> None:\n        \"\"\"Initialise the cache.\n\n        Args:\n            capacity: Maximum number of entries the cache may hold.\n                      Must be a positive integer.\n\n        Raises:\n            ValueError: If *capacity* is less than 1.\n        \"\"\"\n        if capacity < 1:\n            raise ValueError(f\"capacity must be >= 1, got {capacity}\")\n        self._capacity: int = capacity\n        self._data: OrderedDict[KT, VT] = OrderedDict()\n        self._lock: RLock = RLock()\n\n    # ------------------------------------------------------------------\n    # Public API\n    # ------------------------------------------------------------------\n\n    def get(self, key: KT) -> Optional[VT]:\n        \"\"\"Return the value associated with *key* and mark it as most-recently-used.\n\n        Args:\n            key: The key to look up.\n\n        Returns:\n            The cached value if *key* exists, otherwise ``None``.\n        \"\"\"\n        with self._lock:\n            if key not in self._data:\n                return None\n            # Move to end (most-recently-used position)\n            self._data.move_to_end(key)\n            return self._data[key]\n\n    def put(self, key: KT, value: VT) -> None:\n        \"\"\"Insert or update *key* with *value*, marking",
+      "reasoning": "用户要求实现一个 LRU 缓存类，具体要求：\n1. 支持 get(key) / put(key, value) / peek(key) 三个方法\n2. 线程安全\n3. 时间复杂度 O(1)\n4. 用类型注解，写完整的 docstring\n5. 直接输出代码，不要解释\n\n设计思路：\n- 使用 OrderedDict 或 双向链表 + 哈希表 实现 O(1) 的 LRU\n- 线程安全：使用 threading.Lock（或 RLock）\n- peek(key)：查看值但不改变 LRU 顺序（即不将 key 移到最近使用位置）\n- get(key)：获取值并将 key 移到最近使用位置\n- put(key, value)：插入/更新值并将 key 移到最近使用位置，超出容量时淘汰最久未使用的\n\n我选择用 OrderedDict 来实现，因为它天然支持 O(1) 的 move_to_end 和 popitem，代码更简洁。但为了展示\"资深工程师\"水平，也可以用双向链表。不过 OrderedDict 更 Pythonic 且代码更清晰。\n\n实际上，用 OrderedDict 更简洁，且时间复杂度确实是 O(1)。让我用 OrderedDict 实现。\n\n类型注解：\n- 使用 Generic 来支持泛型\n- 或者用 TypeVar\n\n让我写一个完整的实现：\n\n```python\nfrom collections import OrderedDict\nfrom threading import RLock\nfrom typing import Any, Generic, TypeVar, Optional\n\nKT = TypeVar(\"KT\")\nVT = TypeVar(\"VT\")\n\nclass LRUCache(Generic[KT, VT]):\n    def __init__(self, capacity: int) -> None:\n        ...\n    \n    def get(self, key: KT) -> Optional[VT]:\n        ...\n    \n    def put(self, key: KT, value: VT) -> None:\n        ...\n    \n    def peek(self, key: KT) -> Optional[VT]:\n        ...\n```\n\n线程安全用 RLock（可重入锁），这样内部方法可以互相调用而不会死锁。\n\n让我完善代码。\n",
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "bugfix",
+      "cat": "bugfix",
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 100,
+        "total_tokens": 1124,
+        "completion_tokens": 1024,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 451
+      },
+      "engine_timings": null,
+      "total_s": 7.203510500025004,
+      "ttft_s": 0.1905465996824205,
+      "content": "\n\n## 根因\n\n`incr` 中的三步操作 **不是原子的**：\n\n```\ncur = self.n      # ① 读\ncur += 1          # ② 算\nself.n = cur      # ③ 写\n```\n\n两个线程可以交错执行：\n\n| 时刻 | 线程 A | 线程 B |\n|------|--------|--------|\n| t1 | `cur = self.n` → 0 | |\n| t2 | | `cur = self.n` → 0 |\n| t3 | `cur += 1` → 1 | |\n| t4 | | `cur += 1` → 1 |\n| t5 | `self.n = 1` | |\n| t6 | | `self.n = 1` |\n\n两次调用，`n` 却只从 0 变成了 1——**丢失更新（lost update）**。\n\n> CPython 的 GIL 只保证单条字节码不被打断，而 `incr` 包含多条字节码（LOAD_ATTR / BINARY_ADD / STORE_ATTR …），线程切换随时可能发生，因此 GIL **不能**保护这段 read-modify-write 序列。\n\n## 最小改动修复\n\n加一把 `threading.Lock`，把 read-modify-write 整体锁住：\n\n```python\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self.n = 0\n        self._lock = threading.Lock()          # ← 新增\n\n    def incr(self):\n        with self._lock:                        # ← 新增\n            self.n += 1                         # 原三步合并为一条（锁内安全）\n```\n\n### 改动说明\n\n| 改动 | 原因 |\n|------|------|\n| `__init__` 中创建 `self._lock` | 提供互斥原语 |\n| `incr` 用 `with self._lock:` 包裹 | 保证「读 → 算 → 写」三步在临界区内串行执行，消除竞态 |\n| 将 `cur = …; cur += 1; self.n = cur` 简化为 `self.n += 1` | 在锁保护下语义等价，少一个局部变量，更不易出错（非必须，但更简洁） |\n\n### 为什么这样够用\n\n- `threading.Lock` 是互斥锁，同一时刻只有一个线程能进入 `with` 块，其余线程阻塞等待。\n- 临界区内 `self.n += 1` 对 `int` 而言是 `self.n = self.n + 1`，读和写",
+      "reasoning": "用户要求我分析一段 Python 代码的并发缺陷，指出根因，并用最小改动修复。\n\n分析原代码：\n\n```python\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self.n = 0\n    def incr(self):\n        cur = self.n\n        cur += 1\n        self.n = cur\n```\n\n**根因分析：**\n\n`incr` 方法中的操作不是原子的：\n1. `cur = self.n` — 读取\n2. `cur += 1` — 计算\n3. `self.n = cur` — 写回\n\n这是一个经典的 **check-then-act**（或 read-modify-write）竞态条件。两个线程可能同时读到相同的 `self.n` 值，各自加 1 后写回，导致丢失一次更新（lost update）。\n\n虽然 CPython 有 GIL，但 GIL 并不能保证多字节码序列的原子性。在 `cur = self.n` 和 `self.n = cur` 之间，线程可能被切换（GIL 释放/重新获取），导致竞态。\n\n**最小改动修复：**\n\n最小改动就是加一个 `threading.Lock`，在 `incr` 中用 `with self._lock:` 包裹 read-modify-write 操作。\n\n```python\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self.n = 0\n        self._lock = threading.Lock()\n    def incr(self):\n        with self._lock:\n            cur = self.n\n            cur += 1\n            self.n = cur\n```\n\n或者更简洁地写成：\n\n```python\nwith self._lock:\n    self.n += 1\n```\n\n但 `self.n += 1` 在 Python 中对于 int 来说也是 read-modify-write，不过因为 int 是不可变的，`+=` 实际上是 `self.n = self.n + 1`，在锁保护下是安全的。\n\n最小改动：加一个 lock，用 with 语句保护。\n\n让我给出完整修复代码和解释。\n",
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "toolcall",
+      "cat": "tool-use",
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 232,
+        "total_tokens": 303,
+        "completion_tokens": 71,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 18
+      },
+      "engine_timings": null,
+      "total_s": 0.5467916000634432,
+      "ttft_s": 0.22849790006875992,
+      "content": "\n\n\n",
+      "reasoning": "用户要求查询北京和上海的天气，需要调用 get_weather 工具两次。\n",
+      "tool_calls": [
+        {
+          "id": "call_0f6db8948a094858acc05253",
+          "type": "function",
+          "function": {
+            "name": "get_weather",
+            "arguments": "{\"city\": \"北京\"}"
+          }
+        },
+        {
+          "id": "call_08a31940c3dc4aacae04b12c",
+          "type": "function",
+          "function": {
+            "name": "get_weather",
+            "arguments": "{\"city\": \"上海\"}"
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "design",
+      "cat": "complex",
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 81,
+        "total_tokens": 1617,
+        "completion_tokens": 1536,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 314
+      },
+      "engine_timings": null,
+      "total_s": 8.97849480016157,
+      "ttft_s": 0.2284258003346622,
+      "content": "\n\n# 线程安全令牌桶限流器\n\n## 设计要点\n\n| 特性 | 实现方式 |\n|------|----------|\n| 线程安全 | `threading.Lock` 保护每个桶的读写 |\n| 惰性补充 | 在 `try_acquire` 时按时间差计算补充量，无需后台线程 |\n| 多租户隔离 | 以 `key` 为维度维护独立桶实例 |\n| 非阻塞 | `try_acquire` 只做一次判断，不 sleep / 不等待 |\n\n## 完整代码\n\n```python\n\"\"\"\nthread_safe_token_bucket.py\n线程安全的令牌桶限流器（支持多租户 key 隔离）\n\"\"\"\n\nfrom __future__ import annotations\n\nimport threading\nimport time\nfrom dataclasses import dataclass, field\nfrom typing import Dict, Optional\n\n\n# ─────────────────────────────────────────────\n# 单个令牌桶\n# ─────────────────────────────────────────────\n@dataclass\nclass _Bucket:\n    \"\"\"内部令牌桶，由 RateLimiter 统一管理。\"\"\"\n    capacity: float          # 桶容量（最大令牌数）\n    rate: float             # 每秒补充速率（tokens/sec）\n    tokens: float = 0.0     # 当前令牌数\n    last_refill: float = 0.0  # 上次补充时间戳（monotonic）\n\n    def __post_init__(self) -> None:\n        self.tokens = float(self.capacity)  # 初始满桶\n        self.last_refill = time.monotonic()\n\n    def refill(self) -> None:\n        \"\"\"惰性补充：根据经过时间补充令牌，不超过 capacity。\"\"\"\n        now = time.monotonic()\n        elapsed = now - self.last_refill\n        if elapsed <= 0:\n            return\n        self.tokens = min(self.capacity, self.tokens + elapsed * self.rate)\n        self.last_refill = now\n\n\n# ─────────────────────────────────────────────\n# 限流器（多租户）\n# ─────────────────────────────────────────────\nclass TokenBucketRateLimiter:\n    \"\"\"\n    线程安全的令牌桶限流器。\n\n    参数\n    ----\n    capacity : float\n        每个桶的最大容量。\n    rate : float\n        每秒补充的令牌数。\n    default_key : str, optional\n        未显式传 key 时使用的默认租户标识。\n    \"\"\"\n\n    def __init__(\n        self,\n        capacity: float,\n        rate: float,\n        default_key: str = \"__default__\",\n    ) -> None:\n        if capacity <= 0:\n            raise ValueError(\"capacity must be > 0\")\n        if rate <= 0:\n            raise ValueError(\"rate must be > 0\")\n\n        self._capacity = capacity\n        self._rate = rate\n        self._default_key = default_key\n\n        self._buckets: Dict[str, _Bucket] = {}\n        self._lock = threading.Lock()  # 保护 _buckets 字典及桶内部状态\n\n    # ── 公共 API ──────────────────────────────\n\n    def try_acquire(self, n: int = 1, key: Optional[str] = None) -> bool:\n        \"\"\"\n        非阻塞地尝试获取 n 个令牌。\n\n        成功 → 扣减令牌并返回 True\n        失败 → 不扣减，返回 False\n        \"\"\"\n        if n < 0:\n            raise ValueError(\"n must be >= 0\")\n        if n == 0:\n            return True\n\n        key = key if key is not None else self._default_key\n\n        with self._lock:\n            bucket = self._get_or_create_bucket(key)\n            bucket.refill()\n\n            if bucket.tokens >= n:\n                bucket.tokens -= n\n                return True\n            return False\n\n    def available(self, key: Optional[str] = None) -> float:\n        \"\"\"返回指定 key 当前可用令牌数（含惰性补充）。\"\"\"\n        key = key if key is not None else self._default_key\n        with self._lock:\n            bucket = self._get_or_create_bucket(key)\n            bucket.refill()\n            return bucket.tokens\n\n    def reset(self, key: Optional[str] = None) -> None:\n        \"\"\"重置指定 key（或全部）的桶为满状态。\"\"\"\n        with self._lock:\n            if key is None:\n                for b in self._buckets.values():\n                    b.tokens = b.capacity\n                    b.last_refill = time.monotonic()\n            else:\n                key = key if key is not None else self._default_key\n                bucket = self._get_or_create_bucket(key)\n                bucket.tokens = bucket.capacity\n                bucket.last_refill = time.monotonic()\n\n    # ── 内部方法 ──────────────────────────────\n\n    def _get_or_create_bucket(self, key: str) -> _Bucket:\n        \"\"\"获取或创建指定 key 的桶（调用方须持有锁）。\"\"\"\n        if key not in self._buckets:\n            self._buckets[key] = _Bucket(\n                capacity=self._capacity,\n                rate=self._rate,\n            )\n        return self._buckets[key]\n\n\n# ─────────────────────────────────────────────\n# 单元测试\n# ─────────────────────────────────────────────\nimport unittest\nimport time\nimport concurrent.futures\n\n\nclass TestTokenBucketRateLimiter(unittest.TestCase):\n\n    # ── 基本功能 ──────────────────────────────\n\n    def test_initial_full_bucket(self):\n       ",
+      "reasoning": "用户要求设计一个线程安全的令牌桶限流器，需要满足：\n1. 支持设置容量与补充速率\n2. try_acquire(n) 非阻塞，成功返回 True\n3. 支持按 key 维度隔离（多租户）\n4. 提供单元测试\n5. 完整可运行代码\n\n设计思路：\n- 使用 `threading.Lock` 保证线程安全\n- 每个 key 维护一个独立的令牌桶（容量、当前令牌数、上次补充时间）\n- 补充速率：每秒补充 rate 个令牌，最多不超过 capacity\n- try_acquire(n)：检查当前令牌是否 >= n，如果是则扣减并返回 True，否则返回 False\n- 补充逻辑：基于时间差计算应补充的令牌数（惰性补充），避免后台线程\n\n具体实现：\n- `TokenBucket` 类：单个桶，包含 capacity, rate, tokens, last_refill_time\n- `TokenBucketRateLimiter` 类：管理多个 key 的桶，使用字典 + 锁\n- 线程安全：使用 `threading.Lock`（或 `RLock`）保护共享状态\n- 惰性补充：在 try_acquire 时根据时间差计算补充量，避免后台线程\n\n单元测试：\n- 测试基本获取\n- 测试容量限制\n- 测试补充速率\n- 测试多租户隔离\n- 测试并发安全\n- 测试 try_acquire 非阻塞\n\n让我写完整代码。\n",
+      "tool_calls": [],
+      "error": null
+    }
+  ]
+}
