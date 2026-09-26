@@ -6,14 +6,17 @@ REF: `https://github.com/Neroued/ninfer`
 
 ---
 
-## 两份 compose
+## 三份 compose
 
 | 文件 | 权重 | 说明 |
 |---|---|---|
 | **`docker-compose.yaml`** | `models/qwen3_8_27b_nvfp4.ninfer` | **NVFP4，推荐主力**。已调优：`ctx 262144`、host-KV 16 GiB、思考预算 256 |
 | `docker-compose-no-nvfp4.yaml` | `models/qwen3_8_27b.ninfer`（groupwise-int） | 长上下文 prefill 明显更慢（32K 仅 ~2800 tok/s，约 NVFP4 的 40%），**不推荐** |
+| `docker-compose-abliterated.yaml` | `models/qwen3_8_27b_abliterated_nvfp4.ninfer` | **无护栏版**（abliterated），与 NVFP4 版同配置。实测性能与官方版无差异 |
 
-> 两份都占 **30000 端口**，且与该端口上的 SGLang 互斥，需逐个切换。
+> 三份都占 **30000 端口**且共用同一张 GPU，**互斥**，需逐个切换（先 `down` 再 `up`）。
+> 三者服务名均为 `qwen3.8-27b`，对上层客户端（litellm/opencode）可无感互换。
+> 工件完整清单（含校验和、容器版本、来源）见 **`models/README.md`**。
 
 ## 模型与下载源
 
@@ -23,6 +26,8 @@ REF: `https://github.com/Neroued/ninfer`
 |---|---|---|---|
 | `models/qwen3_8_27b_nvfp4.ninfer` | [`neroued/Qwen3.8-27B-nvfp4-NInfer`](https://huggingface.co/neroued/Qwen3.8-27B-nvfp4-NInfer) | 22.09 GB | mixed FP8/NVFP4，源自 [`unsloth/Qwen3.8-27B-NVFP4`](https://huggingface.co/unsloth/Qwen3.8-27B-NVFP4) |
 | `models/qwen3_8_27b.ninfer` | [`neroued/Qwen3.8-27B-NInfer`](https://huggingface.co/neroued/Qwen3.8-27B-NInfer) | 19.03 GB | `groupwise-int` |
+| `models/qwen3_8_27b_abliterated_nvfp4.ninfer` | [`lyf/Qwen3.8-27B-Huihui-Abliterated-NInfer-NVFP4`](https://huggingface.co/lyf/Qwen3.8-27B-Huihui-Abliterated-NInfer-NVFP4)（经 v2→v3 升级） | 20.02 GB | **无护栏**，基座 [`huihui-ai/Huihui-Qwen3.8-27B-abliterated`](https://huggingface.co/huihui-ai/Huihui-Qwen3.8-27B-abliterated) |
+| `models/qwen3_8_27b_abliterated_original.ninfer` | 同上（原始下载件，未升级） | 20.02 GB | 同上；container **v2**，当前运行时**不可直接加载** |
 
 ### 下载命令
 
@@ -93,6 +98,26 @@ ModelScope 亦收录基座镜像：`modelscope.cn/models/Qwen/Qwen3.8-27B`。
 
 > 对照（SGLang 方案，本项目未用）：`gittensor-model-hub/Qwen3.8-27B-NVFP4-RTX5090-LMHead4` + `gittensor-model-hub/Qwen3.8-27B-DSpark-NVFP4`，见 `docs/comparison.md`。
 
+## 无护栏版（abliterated）
+
+基座 [`huihui-ai/Huihui-Qwen3.8-27B-abliterated`](https://huggingface.co/huihui-ai/Huihui-Qwen3.8-27B-abliterated)，经 `lyf` 用**官方转换器**产出 `.ninfer`，再由本项目的升级工具转成当前运行时可用格式：
+
+```
+huihui BF16 ──┐
+              ├─► NInfer 转换器 ─► container v2 (.ninfer) ─► upgrade_ninfer_v2_to_v3.py ─► v3 ✅
+ModelOpt NVFP4┘
+```
+
+- **转换器是公开的**：`github.com/Neroued/ninfer` 的 `tools/convert/`（`pipeline.py`、`qwen3_5.py`、`sources/safetensors.py`、`quantization/`）。输入需两份权重：BF16 源 + 单独量化好的 NVFP4 checkpoint（ModelOpt 校准），且仅支持 Linux。
+- **下载到的是 container v2**，当前运行时（`lqbing/ninfer:latest`）只认 v3，会直接拒绝；必须先升级。升级后权重**逐字节不变**（仅容器框架变化 + 换装维护版 chat template）。
+- 启动：`docker compose -f docker-compose-abliterated.yaml up -d`
+
+**实测（同配置、同机）**：性能与官方版**无差异**；质量官方 36/40 vs 无护栏 30/40，差距源于"更啰嗦、token 预算效率低"导致的长任务截断，非能力退化。详见 `data/abliterated-vs-official.md` 与 `data/quality-gap-abliterated-vs-official.md`。
+
+**两个坑**：
+1. 纯文本场景**别开 `--vision`** —— 额外占 ~0.6 GiB 固定显存，prefill/decode 约腰斩。
+2. **别改 `--model-id`** —— 上层 litellm/opencode 按 `qwen3.8-27b` 调用，改名会导致 agent 工具链报 `model not found`。
+
 ## 当前配置（`docker-compose.yaml`）
 
 ```bash
@@ -143,9 +168,10 @@ docker compose -f docker-compose.yaml down             # 停止
 | 目录 | 内容 |
 |---|---|
 | `bench/` | 压测与探针脚本：`bench_unified.py`（跨引擎压测）、`ninfer_probe.py`（并发/长上下文探针）、`prefix_test.py`（前缀复用）、`prefill_sweep.py`（prefill 曲线）、`quality_probe.py`、`summarize.py` 等 |
-| `data/` | 逐轮原始数据 `*.jsonl`；汇总 `summary.md`/`summary.csv`、`full-comparison.md`、`all-runs.csv`；`stability.md`（5 轮稳定性）、`native-vs-docker.md`（Docker vs WSL 原生）、`ninfer-optimization.md`（**调优报告**）、`rounds3-backup/`（旧 3 轮数据） |
-| `quality/` | `quality.md`（质量抽查 + 思考预算修复验证）、原始输出 `sglang.json`/`ninfer-*.json` |
+| `data/` | 逐轮原始数据 `*.jsonl`；汇总 `summary.md`/`summary.csv`、`full-comparison.md`、`all-runs.csv`；`stability.md`（5 轮稳定性）、`native-vs-docker.md`（Docker vs WSL 原生）、`ninfer-optimization.md`（**调优报告**）；**无护栏相关**：`abliterated-vs-official.md`（性能对照）、`quality-gap-abliterated-vs-official.md`（质量差距）、`ninfer-abliterated.jsonl`/`ninfer-abliterated-vision.jsonl`/`ninfer-official.jsonl` |
+| `quality/` | `quality.md`（质量抽查 + 思考预算修复验证）、原始输出 `sglang.json`/`ninfer-*.json`；**无护栏相关**：`ninfer-abliterated.json`、`ninfer-official.json`、`compare-side-by-side.md`（解码后可读的并排对照） |
+| `tools/` | **NInfer 转换/升级工具链**：`upgrade_ninfer_v2_to_v3.py`（v2→v3 升级）、`chat_templates/`（官方 Qwen chat template）、`do_upgrade.sh`（升级复现脚本，WSL 运行）、`compare_abliterated_artifacts.py`（工件逐字节对比） |
 | `docs/` | `comparison.md`（**三方案横向对比报告**） |
-| `logs/` | WSL 原生启动日志（`native-*.log`，含加载耗时/速率） |
+| `logs/` | WSL 原生启动日志（`native-*.log`，含加载耗时/速率）；本次新增 `bench-*.log`/`quality-*.log`（基准原始 stdout）、`hf-download-abliterated.*.log` |
 
-**推荐阅读顺序**：`data/ninfer-optimization.md`（本项目调优）→ `docs/comparison.md`（与 SGLang 横评）→ `quality/quality.md`（思考/工具调用验证）。
+**推荐阅读顺序**：`data/ninfer-optimization.md`（本项目调优）→ `docs/comparison.md`（与 SGLang 横评）→ `quality/quality.md`（思考/工具调用验证）→ `models/README.md`（工件清单）→ `data/abliterated-vs-official.md`（无护栏横评）。

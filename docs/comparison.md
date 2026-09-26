@@ -57,7 +57,7 @@
 - 统一 harness `bench/bench_unified.py`：仅依赖 `requests`，走 OpenAI `/v1/chat/completions`，自动从 `/v1/models` 发现模型名。
 - **TTFT 口径修正**：两个引擎都先发一个仅含 `role` 的空 delta。若按"第一个含 choices 的 chunk"计时，TTFT 会假性接近 0。统一改为**第一个非空 token**（`content` 或 `reasoning_content` 或 `tool_calls`）。
 - **冷缓存**：每轮 prompt 追加唯一 salt；`cache_n=0` 已验证前缀缓存未命中。
-- 每场景 **5 轮**取中位数（2026-09-25 由 3 轮复测提升到 5 轮；旧数据留存于 `data/rounds3-backup/`）。并发场景用 `threading.Event` 同时放行，记录墙钟与每请求指标。
+- 每场景 **5 轮**取中位数（2026-09-25 由 3 轮复测提升到 5 轮）。并发场景用 `threading.Event` 同时放行，记录墙钟与每请求指标。
 - 完整原始数据见 `data/*.jsonl`，汇总见 `data/summary.md` / `summary.csv`。
 
 ## 4. 性能结果
@@ -219,8 +219,11 @@ Qwen3.8-27B-NInfer\
 │  ├─ stability.md                          ← 稳定性分析（5 轮的中位/极值/标准差/CV）
 │  ├─ native-vs-docker.md                   ← Docker vs WSL 原生
 │  ├─ ninfer-optimization.md                ← NInfer 调优报告
-│  └─ rounds3-backup\                       ← 旧的 3 轮数据（复测前留存）
+│  ├─ abliterated-vs-official.md            ← 无护栏 vs 官方 性能对照
+│  └─ quality-gap-abliterated-vs-official.md ← 无护栏 vs 官方 质量差距
 └─ quality\
    ├─ sglang.json / ninfer-nvfp4.json / ninfer-mtp.json
+   ├─ ninfer-abliterated.json / ninfer-official.json
+   ├─ compare-side-by-side.md                ← 无护栏 vs 官方 并排对照（已解码）
    └─ quality.md
 ```
