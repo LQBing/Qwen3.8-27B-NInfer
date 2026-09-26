@@ -1,2 +1,4 @@
 .omo
-models
+models/*
+!models/README.md
+logs/*.log
