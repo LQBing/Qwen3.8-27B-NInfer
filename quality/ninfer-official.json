@@ -1,0 +1,163 @@
+{
+  "label": "ninfer-official",
+  "model": "qwen3.8-27b",
+  "results": [
+    {
+      "id": "lru",
+      "cat": "code-gen",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 842,
+        "completion_tokens_details": {
+          "reasoning_tokens": 280
+        },
+        "prompt_tokens": 126,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 968
+      },
+      "engine_timings": {
+        "cache_n": 0,
+        "draft_n": 747,
+        "draft_n_accepted": 568,
+        "predicted_ms": 4521.398956999999,
+        "predicted_n": 842,
+        "predicted_per_second": 186.0043778481369,
+        "predicted_per_token_ms": 5.376217546967895,
+        "prompt_ms": 83.23767,
+        "prompt_n": 126,
+        "prompt_per_second": 1513.7377103419642,
+        "prompt_per_token_ms": 0.6606164285714285
+      },
+      "total_s": 4.266456900000776,
+      "ttft_s": 0.08537750000141386,
+      "content": "```python\nfrom __future__ import annotations\n\nimport threading\nfrom collections import OrderedDict\nfrom typing import Any, Hashable, Optional\n\n\nclass LRUCache:\n    \"\"\"çº¿ç¨ LRU ç¼å­ã\n\n    ä½¿ç¨ ``collections.OrderedDict`` ç»´æ¤è®¿é®é¡ºåºï¼ä¿è¯ ``get``ã``put``ã\n    ``peek`` åä¸º O(1) æ¶é´å¤æåº¦ã\n\n    Attributes:\n        capacity: ç¼å­æå¤§å®¹éã\n    \"\"\"\n\n    def __init__(self, capacity: int) -> None:\n        \"\"\"åå§å LRU ç¼å­ã\n\n        Args:\n            capacity: ç¼å­æå¤§å®¹éï¼\n\n        Raises:\n            ValueError: å½ ``capacity`` å°äºç­äº 0 æ¶æåºã\n        \"\"\"\n        if capacity <= 0:\n            raise ValueError(\"capacity must be a positive integer\")\n\n        self.capacity: int = capacity\n        self._data: OrderedDict[Hashable, Any] = OrderedDict()\n        self._lock: threading.RLock = threading.RLock()\n\n    def get(self, key: Hashable) -> Optional[Any]:\n        \"\"\"è·åç¼å­å¼ï¼å¹¶å°è¯¥é®æ è®°ä¸ºæè¿ä½¿ç¨ã\n\n        Args:\n            key: ç¼å­é®ã\n\n        Returns:\n            è¥é®å­å¨ï¼è¿åå¯¹åºå¼ï¼å¦åè¿å ``None``ã\n        \"\"\"\n        with self._lock:\n            if key not in self._data:\n                return None\n\n            self._data.move_to_end(key)\n            return self._data[key]\n\n    def put(self, key: Hashable, value: Any) -> None:\n       ç¼å­å¼ï¼å¹¶å°è¯¥é®æ è®°ä¸ºæè¿ä½¿ç¨ã\n\n        è¥ç¼å­å·²æ»¡ä¸çæ¯æ°é®ï¼æªä½¿ç¨çé®ã\n\n        Args:\n            key: ç¼å­é®ã\n            value: ç¼å­å¼ã\n        \"\"\"\n        with self._lock:\n            if key in self._data:\n                self._data[key] = value\n                self._data.move_to_end(key)\n                return\n\n            if len(self._data) >= self.capacity:\n                self._data.popitem(last=False)\n\n            self._data[key] = value\n\n    def peek(self, key: Hashable) -> Optional[Any]:\n        \"\"\"è·åç¼å­å¼ï¼ä½ä¸æ¹åé®çæè¿ä½¿ç¨é¡ºåºã\n\n        Args:\n            key: ç¼å­é®ã\n\n        Returns:\n            è¥é®å­å¨ï¼è¿åå¯¹åºå¼ï¼å¦åè¿å ``None``ã\n        \"\"\"\n        with self._lock:\n            return self._data.get(key, None)\n```",
+      "reasoning": "We need answer user's request in Chinese? User asks: \"ä½ æ¯ä¸ä¸ªèµæ·± Python å·¥ç¨å¸ãè¯·å®ç°ä¸ä¸ª LRU ç¼å­ç±»ï¼è¦æ±ï¼\n1. æ¯æ get(key) / put(key, value) / peek(key) ä¸ä¸ªæ¹æ³\n2. . æ¶é´å¤æåº¦ O(1)\n4. ç¨ç±»åæ³¨è§£ï¼åå®æ´ç docstring\nè¯·ç´æ¥è¾åºä»£ç ï¼ä¸è¦è§£éã\"\n\nNeed output code only, no explanation. Need implement LRU cache thread-safe O(1), type annotations, complete docstring. Need likely use OrderedDict? But O(1) and thread safe. Could implement with collections.OrderedDict and RLock. get/put/peek. Need decide semantics: get returns value and moves to most recently used; put inserts/updates and moves; peek returns value without changing order. Need capacity? LRU cache usually capacity. User didn't specify capacity but LRU implies max size. Need include capacity parameter. Could be generic? Type annotations. Need thread safety. Use threading.RLock. Use OrderedDict for O(1) move_to_end. But if need pure? Python stdlib okay. Need complete docstring. Direct code only.\n\nPotential code:\nfrom __future__ import\n\n Considering the limited time by the user, I have to give the solution based on the thinking directly now.\n",
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "bugfix",
+      "cat": "bugfix",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 463,
+        "completion_tokens_details": {
+          "reasoning_tokens": 280
+        },
+        "prompt_tokens": 142,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 605
+      },
+      "engine_timings": {
+        "cache_n": 0,
+        "draft_n": 464,
+        "draft_n_accepted": 283,
+        "predicted_ms": 2824.2228640000003,
+        "predicted_n": 463,
+        "predicted_per_second": 163.58482394893605,
+        "predicted_per_token_ms": 6.113036502164503,
+        "prompt_ms": 91.052253,
+        "prompt_n": 142,
+        "prompt_per_second": 1559.5440565320225,
+        "prompt_per_token_ms": 0.6412130492957746
+      },
+      "total_s": 2.7133881999998266,
+      "ttft_s": 0.1015055999996548,
+      "content": "æ ¹å ï¼`incr()` ä¸­ç `cur = self.n`ã`cur += 1`ã`self.n = cur` æ¯ä¸ä¸ªâè¯»åâä¿®æ¹âååâçå¤åæä½ï¼ä¸æ¯åå­æä½ãå¤çº¿ç¨å¹¶åæ§è¡æ¶ï¼ä¸¤ä¸ªçº¿ç¨å¯è½åæ¶è¯»å°åä¸ä¸ª `self.n`ï¼ç¶ååèªå  1 åååï¼å¯¼è´ä¸æ¬¡èªå¢ä¸¢å¤±ã\n\næå°æ¹å¨ï¼ç¨ `threading.Lock` ä¿æ¤è¿æ®µè¯»æ¹åé»è¾ã\n\n```python\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self.n = 0\n        self._lock = threading.Lock()\n\n    def incr(self):\n        with self._lock:\n            self.n += 1\n```\n\nè¯´æï¼`with self._lock:` ä¿è¯åä¸æ¶å»åªæä¸ä¸ªçº¿ç¨æ§è¡ `self.n += 1`ï¼ææ¡ä»¶ã",
+      "reasoning": "We need answer in Chinese. User asks: Python code has concurrency defect, point root cause and minimal fix, provide full fixed code. Requirement: support multithread-safe increment, explain why original unsafe.\n\nNeed think. Original Counter.incr does read-modify-write without synchronization. In CPython, due to GIL, individual bytecode operations atomic? But sequence cur = self.n; cur += 1; self.n = cur can be interleaved between threads, causing lost updates. Even if GIL prevents true parallel execution, thread switches can occur between bytecodes, so race condition. Need minimal change: add threading.Lock around read-modify-write. Could use threading.Lock in __init__, acquire in incr. Or use itertools.count? But minimal: lock.\n\nNeed provide complete code:\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self.n = 0\n        self._lock = threading.Lock()\n    def incr(self):\n        with self._lock:\n            self.n += 1\n            return self.n? Original didn't return. Minimal maybe no return. But if want return? Keep same behavior? Original returns None. Could keep no return. But maybe useful. Minimal change: add lock and with\n\n Considering the limited time by the user, I have to give the solution based on the thinking directly now.\n",
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "toolcall",
+      "cat": "tool-use",
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 96,
+        "completion_tokens_details": {
+          "reasoning_tokens": 43
+        },
+        "prompt_tokens": 334,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 430
+      },
+      "engine_timings": {
+        "cache_n": 0,
+        "draft_n": 87,
+        "draft_n_accepted": 69,
+        "predicted_ms": 517.12425,
+        "predicted_n": 96,
+        "predicted_per_second": 183.7082674038203,
+        "predicted_per_token_ms": 5.443413157894736,
+        "prompt_ms": 110.271349,
+        "prompt_n": 334,
+        "prompt_per_second": 3028.8919381951155,
+        "prompt_per_token_ms": 0.3301537395209581
+      },
+      "total_s": 0.5892564000005223,
+      "ttft_s": 0.11070809999910125,
+      "content": "",
+      "reasoning": "ç¨æ·è¦æ±æ¥è¯¢åäº¬åä¸æµ·ç°å¨çå¤©æ°ï¼éè¦è°ç¨ get_weather åå¸çå¤©æ°æ¥è¯¢æ¯ç¸äºç¬ç«çï¼æ²¡æå¯ä»¥å¨åä¸ä¸ªåä¸­å¹¶è¡è°ç¨ä¸¤æ¬¡ get\n",
+      "tool_calls": [
+        {
+          "id": "call_6b25b6a1ba15fe8c",
+          "type": "function",
+          "function": {
+            "name": "get_weather",
+            "arguments": "{\"city\":\"åäº¬\"}"
+          }
+        },
+        {
+          "id": "call_3df89d05960aab3a",
+          "type": "function",
+          "function": {
+            "name": "get_weather",
+            "arguments": "{\"city\":\"ä¸æµ·\"}"
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "design",
+      "cat": "complex",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 1536,
+        "completion_tokens_details": {
+          "reasoning_tokens": 280
+        },
+        "prompt_tokens": 123,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 1659
+      },
+      "engine_timings": {
+        "cache_n": 0,
+        "draft_n": 1324,
+        "draft_n_accepted": 1066,
+        "predicted_ms": 8046.931329999999,
+        "predicted_n": 1536,
+        "predicted_per_second": 190.75594621732657,
+        "predicted_per_token_ms": 5.242300540716612,
+        "prompt_ms": 85.983812,
+        "prompt_n": 123,
+        "prompt_per_second": 1430.5018251575075,
+        "prompt_per_token_ms": 0.6990553821138211
+      },
+      "total_s": 7.5336415999991,
+      "ttft_s": 0.09736949999933131,
+      "content": "ä¸é¢ç»åºä¸ä¸ªå®æ´å¯è¿è¡ç Python å®ç°ï¼\n\n- éæµå¨\n- æ¯æè®¾ç½®å®¹é `capacity` ä¸ill_rate`\n- `try_acquire(n)` éé»å¡ï¼æåè¿å `True`ï¼å¤±è´¥è¿å `False`\n- æ¯ææ `key` ç»´åº¦éç¦»ï¼å®ç°å¤ç§æ·éæµ\n- éå¸¦ `\n- éå¸¦ç®å `__main__` æ¼ç¤º\n\n---\n\n## å®æ´ä»£ç \n\n```python\n\"\"\"æ¡¶éæµå¨\n\nåè½ï¼\n1. æ¯æè®¾ç½®å®¹é capacity refill_rate\n2. try_acquire(n) éé»å¡ï¼æåè¿å Trueï¼å¤±è´¥è¿å False\n3. æ¯ææ key ç»´åº¦éç¦»ï¼å®ç°å¤ç§æ·éæµ\n4. \"\"\"\n\nimport threading\nimport time\nimport unittest\nfrom typing import Dict, Optional\n\n\nclass TokenBucket:\n    \"\"\"\n    åä¸ªä»¤çæ¡¶\n\n    åæ°ï¼\n        capacity: æ¡¶å®¹éï¼æå¤§ä»¤çæ°\n        refill_rate: æ¯ç§ä»¤çæ°\n    \"\"\"\n\n    def __init__(self, capacity: float, refill_rate: float):\n        if capacity < 0:\n            raise ValueError(\"capacity must be non-negative\")\n        if refill_rate < 0:\n            raise ValueError(\"refill_rate must be non-negative\")\n\n        self.capacity = float(capacity)\n        self.refill_rate = float(refill_rate)\n\n        self._tokens = self.capacity\n        self._last_refill = time.monotonic()\n        self._lock = threading.Lock()\n\n    def _refill(self) -> None:\n        \"\"\"\n        æ ¹æ®æ¶é´æµé        æ³¨æï¼è°ç¨æ¹ææ self._lock\n        \"\"\"\n        now = time.monotonic()\n        elapsed = now - self._last_refill\n\n        if elapsed <= 0:\n            return\n\n       ï¼        self._tokens = min(\n            self.capacity,\n            self._tokens + elapsed * self.refill_rate\n        )\n        self._last_refill = now\n\n    def try_acquire(self, n: float = 1) -> bool:\n        \"\"\"\n        éé»å¡å°è¯è·å n ä¸ªä»¤ç\n\n        åæ°ï¼\n            n: éè¦è·åçä»¤çæ°ï¼é»è®¤ 1\n\n        è¿åï¼\n            True: è·åæå\n            False: ä»¤çä¸è¶³ï¼è·åå¤±è´¥\n        \"\"\"\n        if n < 0:\n            raise ValueError(\"n must be non-negative\")\n\n        with self._lock:\n            self._refill()\n\n            if self._tokens >= n:\n                self._tokens -= n\n                return True\n\n            return False\n\n    def available_tokens(self) -> float:\n        \"\"\"\n        è¿åå½åå¯ç¨ä»¤çæ°ï¼ä¼ä»¤çï¼\n        \"\"\"\n        with self._lock:\n            self._refill()\n            return self._tokens\n\n\nclass TokenBucketRateLimiter:\n    \"\"\"\n    å¤ç§æ·ä»¤çæ¡¶éæµå¨\n\n    æ¯ä¸ª key å¯¹åºä¸ä¸ªç¬ç«ç TokenBucketã\n    \"\"\"\n\n    def __init__(\n        self,\n        default_capacity: float,\n        default_refill_rate: float,\n        key_config: Optional[Dict[str, tuple]] = None\n    ):\n        \"\"\"\n        åæ°ï¼\n            default_capacity: é»è®¤æ¡¶å®¹é\n            default_refill_rate:\n            key_config: å¯éï¼ä¸åæ¡¶åæ°\n                        ä¾å¦ï¼{\"user1\": (10, 2.0), \"user2\": (5, 1.0)}\n        \"\"\"\n        if default_capacity < 0:\n            raise ValueError(\"default_capacity must be non-negative\")\n        if default_refill_rate < 0:\n            raise ValueError(\"default_refill_rate must be non-negative\")\n\n        self.default_capacity = float(default_capacity)\n        self.default_refill_rate = float(default_refill_rate)\n\n        self.key_config = key_config or {}\n        self.buckets: Dict[str, TokenBucket] = {}\n        self._lock = threading.Lock()\n\n    def _get_bucket(self, key: str) -> TokenBucket:\n        \"\"\"\n        è·åæåå»ºæå® key å¯¹åºçä»¤çæ¡¶\n        \"\"\"\n        with self._lock:\n            if key not in self.buckets:\n                if key in self.key_config:\n                    capacity, refill_rate = self.key_config[key]\n                else:\n                    capacity = self.default_capacity\n                    refill_rate = self.default_refill_rate\n\n                self.buckets[key] = TokenBucket(capacity, refill_rate)\n\n            return self.buckets[key]\n\n    def try_acquire(self, key: str, n: float = 1) -> bool:\n        \"\"\"\n        éé»å¡å°è¯ä¸ºæå® key è·å n ä¸ªä»¤ç\n\n        åæ°ï¼\n            key: ç§æ·/ç¨æ·/æ¥å£ç­éç¦»ç»´åº¦\n            n: éè¦è·åçä»¤çæ°ï¼é»è®¤ 1\n\n        è¿åï¼\n            True: è·åæå\n            False: ä»¤çä¸è¶³ï¼è·åå¤±è´¥\n        \"\"\"\n        bucket = self._get_bucket(key)\n        return bucket.try_acquire(n)\n\n    def available_tokens(self, key: str) -> float:\n        \"\"\"\n        è¿åæå® key å½åå¯ç¨ä»¤çæ°\n        \"\"\"\n        bucket = self._get_bucket(key)\n        return bucket.available_tokens()\n\n\nclass TokenBucketRateLimiterWithConfig:\n    \"\"\"\n    æ´çµæ´»çå¤ç§æ·éæµå¨ï¼æ¯ä¸ª key åç¬æå® capacity å refill_rate\n    \"\"\"\n\n    def __init__(self):\n        self.buckets: Dict[str, TokenBucket] = {}\n        self._lock = threading.Lock",
+      "reasoning": "We need answer in Chinese likely. User asks: è®¾è®¡å¹¶å®ç°ä¸ä¸ªéæµå¨ï¼token bucket rate limiterï¼ï¼è¦æ±ï¼\n1. æ¯æéç\n2. try_acquire(n) éé»å¡ï¼æåè¿å True\n3. æ¯ææ key ç»´åº¦éç¦»ï¼å¤ç§æ·ï¼\n4.è¯·ç»åºå®æ´å¯è¿è¡ä»£ç ã\n\nNeed provide complete runnable code. Need think through implementation. Python likely. Need thread-safe. Could use threading.Lock per bucket or global lock. Need support capacity and refill rate. try_acquire(n) non-blocking returns True. Multi-tenant by key. Unit tests. Need maybe include demo main. Need ensure correct token bucket semantics.\n\nDesign:\nclass TokenBucket:\n    def __init__(self, capacity: float, refill_rate: float): # tokens per second\n        self.capacity = capacity\n        self.refill_rate = refill_rate\n        self.tokens = capacity\n        self.last_refill = time.monotonic()\n        self.lock = threading.Lock()\n    def _refill(self):\n        now = time.monotonic()\n        elapsed = now - self.last_refill\n        if elapsed > 0:\n           \n\n Considering the limited time by the user, I have to give the solution based on the thinking directly now.\n",
+      "tool_calls": [],
+      "error": null
+    }
+  ]
+}

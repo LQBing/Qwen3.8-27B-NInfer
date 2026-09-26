@@ -1,0 +1,163 @@
+{
+  "label": "ninfer-abliterated",
+  "model": "qwen38-huihui-abliterated-nvfp4",
+  "results": [
+    {
+      "id": "lru",
+      "cat": "code-gen",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 1024,
+        "completion_tokens_details": {
+          "reasoning_tokens": 280
+        },
+        "prompt_tokens": 126,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 1150
+      },
+      "engine_timings": {
+        "cache_n": 0,
+        "draft_n": 904,
+        "draft_n_accepted": 695,
+        "predicted_ms": 5451.931622,
+        "predicted_n": 1024,
+        "predicted_per_second": 187.63991754260488,
+        "predicted_per_token_ms": 5.329356424242424,
+        "prompt_ms": 85.09585,
+        "prompt_n": 126,
+        "prompt_per_second": 1480.683253061107,
+        "prompt_per_token_ms": 0.6753638888888889
+      },
+      "total_s": 5.154141499999241,
+      "ttft_s": 0.09632090000013704,
+      "content": "```python\nfrom __future__ import annotations\n\nimport threading\nfrom collections.abc import Hashable\nfrom typing import Generic, Optional, TypeVar\n\nK = TypeVar(\"K\", bound=Hashable)\nV = TypeVar(\"V\")\n\n\nclass _Node(Generic[K, V]):\n    \"\"\"Doubly linked list node for LRU cache.\"\"\"\n\n    __slots__ = (\"key\", \"value\", \"prev\", \"next\")\n\n    def __init__(self, key: K, value: V) -> None:\n        self.key: K = key\n        self.value: V = value\n        self.prev: Optional[_Node[K, V]] = None\n        self.next: Optional[_Node[K, V]] = None\n\n\nclass LRUCache(Generic[K, V]):\n    \"\"\"Thread-safe LRU cache with O(1) get/put/peek operations.\n\n    The cache maintains a fixed capacity. When capacity is exceeded,\n    the least recently used item is evicted.\n\n    Thread safety is provided by a reentrant lock.\n    \"\"\"\n\n    def __init__(self, capacity: int) -> None:\n        \"\"\"Initialize the LRU cache.\n\n        Args:\n            capacity: Maximum number of items the cache can hold.\n                Must be a non-negative integer.\n\n        Raises:\n            ValueError: If capacity is negative.\n        \"\"\"\n        if capacity < 0:\n            raise ValueError(\"capacity must be non-negative\")\n\n        self._capacity: int = capacity\n        self._data: dict[K, _Node[K, V]] = {}\n        self._lock: threading.RLock = threading.RLock()\n\n        # Dummy head and tail nodes to simplify edge cases.\n        self._head: _Node[K, V] = _Node(None, None)  # type: ignore[arg-type]\n        self._tail: _Node[K, V] = _Node(None, None)  # type: ignore[arg-type]\n        self._head.next = self._tail\n        self._tail.prev = self._head\n\n    def _remove(self, node: _Node[K, V]) -> None:\n        \"\"\"Remove a node from the linked list.\n\n        Args:\n            node: Node to remove.\n        \"\"\"\n        prev_node = node.prev\n        next_node = node.next\n        if prev_node is not None:\n            prev_node.next = next_node\n        if next_node is not None:\n            next_node.prev = prev_node\n        node.prev = None\n        node.next = None\n\n    def _add_to_front(self, node: _Node[K, V]) -> None:\n        \"\"\"Add a node right after the head, marking it as most recently used.\n\n        Args:\n            node: Node to add.\n        \"\"\"\n        first = self._head.next\n        self._head.next = node\n        node.prev = self._head\n        node.next = first\n        if first is not None:\n            first.prev = node\n\n    def _move_to_front(self, node: _Node[K, V]) -> None:\n        \"\"\"Move a node to the front, marking it as most recently used.\n\n        Args:\n            node: Node to move.\n        \"\"\"\n        self._remove(node)\n        self._add_to_front(node)\n\n    def _pop_back(self) -> Optional[_Node[K, V]]:\n        \"\"\"Remove and return the least recently used node.\n\n        Returns:\n           ",
+      "reasoning": "We need answer user in Chinese likely. User asks: \"ä½ æ¯ä¸ä¸ªèµæ·± Python å·¥ç¨å¸ãè¯·å®ç°ä¸ä¸ª LRU ç¼å­ç±»ï¼è¦æ±ï¼\n1. æ¯æ get(key) / put(key, value) / peek(key) ä¸ä¸ªæ¹æ³\n2.3. æ¶é´å¤æåº¦ O(1)\n4. ç¨ç±»åæ³¨è§£ï¼åå®æ´ç docstring\nè¯·ç´æ¥è¾åºä»£ç ï¼ä¸è¦è§£éã\"\n\nNeed output code only, no explanation. Need implement LRU cache thread-safe O(1), type annotations, full docstrings. Need decide language Python. Need likely use OrderedDict? But O(1) and thread-safe. Could implement with dict + doubly linked list for O(1) and no reliance on OrderedDict? OrderedDict move_to_end O(1) average? It's fine. But to be robust, implement custom doubly linked list. Need thread safety: use threading.RLock or Lock. Methods get, put, peek. Need type annotations. Need complete docstrings. Direct output code.\n\nConsider semantics: LRU cache capacity. get returns value if exists and marks most recently used; if not returns None? Could return Optional[Value]. put inserts/updates and marks MRU; if capacity exceeded evict LRU.\n\n Considering the limited time by the user, I have to give the solution based on the thinking directly now.\n",
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "bugfix",
+      "cat": "bugfix",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 431,
+        "completion_tokens_details": {
+          "reasoning_tokens": 280
+        },
+        "prompt_tokens": 142,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 573
+      },
+      "engine_timings": {
+        "cache_n": 0,
+        "draft_n": 419,
+        "draft_n_accepted": 265,
+        "predicted_ms": 2552.457641,
+        "predicted_n": 431,
+        "predicted_per_second": 168.46508756616817,
+        "predicted_per_token_ms": 5.935948002325581,
+        "prompt_ms": 93.417107,
+        "prompt_n": 142,
+        "prompt_per_second": 1520.0641998044318,
+        "prompt_per_token_ms": 0.6578669507042254
+      },
+      "total_s": 2.4608714999994845,
+      "ttft_s": 0.09521569999924395,
+      "content": "æ ¹å ï¼`incr()` ä¸­ç `cur = self.n`ã`cur += 1`ã`self.n = cur` æ¯ä¸ä¸ªâè¯»åâä¿®æ¹âååâçå¤åæä½ï¼ä¸æ¯åå­çãå¤çº¿ç¨ä¸å¯è½ä¸¤ä¸ªçº¿ç¨åæ¶è¯»å°ç¸åç `self.n`ï¼ç¶åé½åå `n + 1`ï¼å¯¼è´ä¸æ¬¡èªå¢ä¸¢å¤±ã\n\næå°ä¿®å¤ï¼ç¨ `threading.Lock` ä¿æ¤è¿æ®µè¯»æ¹åé»è¾ã\n\n```python\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self.n = 0\n        self._lock = threading.Lock()\n\n    def incr(self):\n        with self._lock:\n            self.n += 1\n```",
+      "reasoning": "We need answer in Chinese. User asks: Python code has concurrency defect, point out root cause and minimal fix, provide complete fixed code. Requirement: support multithread-safe increment, explain why original unsafe.\n\nNeed think: Python GIL? Even with GIL, incr has race condition due to non-atomic read-modify-write: cur = self.n; cur += 1; self.n = cur. Multiple threads can interleave between bytecode operations, both read same n, both write n+1, lost update. Minimal fix: use threading.Lock around read-modify-write. Or use itertools.count? But class Counter with n attribute? Minimal: add lock in __init__, with self._lock in incr. Could also use atomic? Python int not atomic. Could use threading.Lock.\n\nNeed provide complete code:\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self.n = 0\n        self._lock = threading.Lock()\n    def incr(self):\n        with self._lock:\n            self.n += 1\n\nMaybe if want return value? Original doesn't return. Could keep. Minimal change: add lock.\n\nExplain root cause: check-then-act / read-modify-write not\n\n Considering the limited time by the user, I have to give the solution based on the thinking directly now.\n",
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "toolcall",
+      "cat": "tool-use",
+      "finish_reason": "tool_calls",
+      "usage": {
+        "completion_tokens": 84,
+        "completion_tokens_details": {
+          "reasoning_tokens": 31
+        },
+        "prompt_tokens": 334,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 418
+      },
+      "engine_timings": {
+        "cache_n": 0,
+        "draft_n": 75,
+        "draft_n_accepted": 61,
+        "predicted_ms": 448.00983,
+        "predicted_n": 84,
+        "predicted_per_second": 185.26379209134763,
+        "predicted_per_token_ms": 5.397708795180723,
+        "prompt_ms": 110.691188,
+        "prompt_n": 334,
+        "prompt_per_second": 3017.403697934835,
+        "prompt_per_token_ms": 0.33141074251497005
+      },
+      "total_s": 0.5271496000004845,
+      "ttft_s": 0.1115563999992446,
+      "content": "",
+      "reasoning": "The user is asking for the current weather in Beijing and Shanghai. Since these are independent calls, I can invoke both get_weather functions in parallel.\n",
+      "tool_calls": [
+        {
+          "id": "call_c99fd1f4ed16deab",
+          "type": "function",
+          "function": {
+            "name": "get_weather",
+            "arguments": "{\"city\":\"åäº¬\"}"
+          }
+        },
+        {
+          "id": "call_0cb1593d5b5653ed",
+          "type": "function",
+          "function": {
+            "name": "get_weather",
+            "arguments": "{\"city\":\"ä¸æµ·\"}"
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "design",
+      "cat": "complex",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 1536,
+        "completion_tokens_details": {
+          "reasoning_tokens": 280
+        },
+        "prompt_tokens": 123,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 1659
+      },
+      "engine_timings": {
+        "cache_n": 0,
+        "draft_n": 1429,
+        "draft_n_accepted": 1032,
+        "predicted_ms": 8601.991766,
+        "predicted_n": 1536,
+        "predicted_per_second": 178.4470436332199,
+        "predicted_per_token_ms": 5.603903430618892,
+        "prompt_ms": 87.428353,
+        "prompt_n": 123,
+        "prompt_per_second": 1406.866259964888,
+        "prompt_per_token_ms": 0.7107996178861788
+      },
+      "total_s": 8.072407899999234,
+      "ttft_s": 0.09911939999983588,
+      "content": "# çº¿ç¨ä»¤çæ¡¶éæµå¨ï¼Pythonï¼\n\n## è®¾è®¡è¦ç¹\n\n- **æ°æ§ï¼lazy refillï¼**ï¼ä¸å¯å¨åå°çº¿ç¨ï¼æ¯æ¬¡ `try_acquire` æ¶æ ¹æ®æ¶é´å·®è®¡ç®åºä¸ç²¾åº¦é®é¢\n- **ä¸¤çº§éåªä¿æ¤\"åå»º/æ¥æ¾ï¼ä¸´çåºæç­ï¼ï¼æ¯ä¸ªæ¡¶ææç¬ç«éï¼å¤ç§æ·ä¹é´äºä¸é»å¡\n- **`try_acquire(n)` éé»å¡**ï¼ä¸æ¬¡è°ç¨è¦ä¹åå­å°æ£å n ä¸ªä»¤çï¼è¦ä¹åæ ·è¿å Falseï¼æ é¨åæ£å\n- **æº¢åºæªåä»¤çæ°ï¼`n > capacity` æ¶å³ä½¿æ¡¶æ»¡ä¹æç»ï¼ä¸ Redis ä»¤çæ¡¶è¯­ä¹ä¸è´ï¼\n- **æ¶é**ï¼é»è®¤ `time.monotonic`ï¼ä¸åç³»ç»æ¶é´åæ¨å½±åï¼ï¼å¯æµè¯\n\n## å®æ´ä»£ç \n\n```python\n\"\"\"çº¿ç¨æµå¨ï¼æ¯æå¤ç§æ· key éç¦»ï¼ã\n\nç¨æ³:\n    limiter = TokenBucketLimiter(capacity=10, rate=2.0)   # å®¹é10, æ¯ç§    if limiter.try_acquire(3, key=\"user:42\"):\n        ...  # æ¾è¡\n    else:\n        ...  # éæµ\n\"\"\"\n\nfrom __future__ import annotations\n\nimport threading\nimport time\nfrom typing import Callable, Dict, Optional\n\n\nclass TokenBucket:\n    \"\"\"åä¸ªä»¤çæ¡¶ãçº¿ç¨ Args:\n        capacity: æ¡¶å®¹éï¼æå¤§ä»¤çæ°ï¼ã\n        rate:    ä»¤ç/ç§ï¼ã\n        clock:    åè°æ¶éï¼é»è®¤ time.monotonicï¼ã\n    \"\"\"\n\n    __slots__ = (\"capacity\", \"rate\", \"clock\", \"_tokens\", \"_last_refill\", \"_lock\")\n\n    def __init__(self, capacity: float, rate: float,\n                 clock: Callable[[], float] = time.monotonic) -> None:\n        if capacity <= 0:\n            raise ValueError(f\"capacity must be > 0, got {capacity}\")\n        if rate <= 0:\n            raise ValueError(f\"rate must be > 0, got {rate}\")\n        self.capacity = float(capacity)\n        self.rate = float(rate)\n        self.clock = clock\n        now = clock()\n        self._tokens: float = capacity          # åå§ä¸ºæ»¡æ¡¶\n        self._last_refill: float = now\n        self._lock = threading.Lock()\n\n    def _refill_locked(self, now: float) -> None:\n        \"\"\"æ°æ§ _lockã\"\"\"\n        elapsed = now - self._last_refill\n        if elapsed > 0:\n            self._tokens = min(self.capacity,\n                               self._tokens + elapsed * self.rate)\n            self._last_refill = now\n\n    def try_acquire(self, n: float = 1) -> bool:\n        \"\"\"éé»å¡è·å n ä¸ªä»¤çï¼æåè¿å Trueã\"\"\"\n        if n <= 0:\n            raise ValueError(f\"n must be > 0, got {n}\")\n        if n > self.capacity:\n            return False  # å³ä½¿æ¡¶æ»¡ä¹æ¿ä¸åº n ä¸ª\n        with self._lock:\n            now = self.clock()\n            self._refill_locked(now)\n            if self._tokens >= n:\n                self._tokens -= n\n                return True\n            return False\n\n    @property\n    def available(self) -> float:\n        \"\"\"å½åå¯ç¨ä»¤çæ°ï¼è¿ä¼¼è§¦åä¸æ¬¡        with self._lock:\n            self._refill_locked(self.clock())\n            return self._tokens\n\n\nclass TokenBucketLimiter:\n    \"\"\"å¤ç§æ·ä»¤çæ¡¶éæµå¨ï¼æ key éç¦»ï¼æ¯ä¸ª key ä¸ä¸ªç¬ç«æ¡¶ã\n\n    Args:\n        capacity: æ¯ä¸ªæ¡¶çå®¹éã\n        rate:     æ¯ä¸ªæ¡¶ä»¤ç/ç§ï¼ã\n        clock:    åè°æ¶éæµè¯ã\n    \"\"\"\n\n    def __init__(self, capacity: float, rate: float,\n                 clock: Callable[[], float] = time.monotonic) -> None:\n        self._capacity = capacity\n        self._rate = rate\n        self._clock = clock\n        self._buckets: Dict[str, TokenBucket] = {}\n        self._buckets_lock = threading.Lock()  # æ¬èº«\n\n    def _get_bucket(self, key: str) -> TokenBucket:\n        bucket = self._buckets.get(key)\n        if bucket is None:\n            with self._buckets_lock:\n                bucket = self._buckets.get(key)\n                if bucket is None:\n                    bucket = TokenBucket(self._capacity, self._rate, self._clock)\n                    self._buckets[key] = bucket\n        return bucket\n\n    def try_acquire(self, n: float = 1, key: str = \"default\") -> bool:\n        \"\"\"éé»å¡è·åï¼ä» key å¯¹åºçæ¡¶ä¸­å n ä¸ªä»¤çï¼æåè¿å Trueã\"\"\"\n        return self._get_bucket(key).try_acquire(n)\n\n    def available(self, key: str = \"default\") -> float:\n        \"\"\"key å¯¹åºæ¡¶å½åå¯ç¨ä»¤çæ°ï¼è¿ä¼¼å¼ï¼ã\"\"\"\n        return self._get_bucket(key).available\n\n    def reset(self, key: Optional[str] = None) -> None:\n        \"\"\"éç½®æä¸ª key çæ¡¶ï¼key=None \"\"\"\n        with self._buckets_lock:\n            if key is None:\n                self._buckets.clear()\n            else:\n                self._buckets.pop(key, None)\n\n\n# ----------------------------------------------------------------------ï¼python -m unittest -v\n#",
+      "reasoning": "The user is asking for a thread-safe token bucket rate limiter in Python (implied by the naming convention `try_acquire(n)` and the request for unit tests). Requirements:\n\n1. Support setting capacity and refill rate\n2. `try_acquire(n)` is non-blocking, returns True on success\n3. Support isolation by key (multi-tenant)\n4. Provide unit tests\n5. Complete, runnable code\n\nLet me design this properly:\n\n**Design considerations:**\n\n1. **Token bucket algorithm**: A bucket with capacity `capacity`, refilled at `rate` tokens per second. Tokens are added lazily (on access) rather than by a background thread â this is the standard, efficient approach.\n\n2. **Thread safety**: Use `threading.Lock` per bucket, or a global lock. For multi-tenant, per-key locks are better for concurrency, but we also need to protect the dict of buckets themselves. Options:\n   - A single global lock (simple, but contention)\n   - Per-key locks with a global lock only for bucket creation (better)\n   \n   I'll go with per-key locks: a global lock protects the dict of buckets, and each bucket has its own lock for token operations. Actually\n\n Considering the limited time by the user, I have to give the solution based on the thinking directly now.\n",
+      "tool_calls": [],
+      "error": null
+    }
+  ]
+}

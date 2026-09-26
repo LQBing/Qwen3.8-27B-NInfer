@@ -1,0 +1,14 @@
+services:
+  qwen3-8-27b-abliterated-ninfer:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+    ports:
+      - 30000:30000
+    volumes:
+      - ./models:/models:ro
+    image: lqbing/ninfer
+    command: ninfer-serve /models/qwen3_8_27b_abliterated_nvfp4.ninfer --host 0.0.0.0 --port 30000 --max-context 262144 --kv-capacity 262144 --max-concurrency 2 --kv-dtype fp8 --device-state-slots 2 --host-state-slots 16 --host-kv-mib 16384 --spec mtp --draft-tokens 3 --lm-head-draft --preserve-thinking --default-thinking-budget 256
